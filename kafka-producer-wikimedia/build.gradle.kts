@@ -24,7 +24,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // https://mvnrepository.com/artifact/com.launchdarkly/okhttp-eventsource
-    implementation("com.launchdarkly:okhttp-eventsource:4.1.1")
+//    implementation("com.launchdarkly:okhttp-eventsource:4.1.1")
+    implementation("com.launchdarkly:okhttp-eventsource:2.5.0")
 }
 
 tasks.test {
