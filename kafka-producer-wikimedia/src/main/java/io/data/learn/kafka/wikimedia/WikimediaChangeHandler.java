@@ -3,9 +3,11 @@ package io.data.learn.kafka.wikimedia;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -35,7 +37,18 @@ public class WikimediaChangeHandler implements EventHandler {
         logger.info(messageEvent.getData());
 
         // asynchronous send the msg
-        kafkaProducer.send(new ProducerRecord<>(topic, messageEvent.getData()));
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, messageEvent.getData());
+        kafkaProducer.send(record, new Callback() {
+            @Override
+            public void onCompletion(RecordMetadata metadata, Exception exception) {
+                if (exception != null) {
+                    logger.error("Error in sending message", exception);
+                }
+                else {
+                    logger.info("Message sent to partition " + metadata.partition() + " with offset " + metadata.offset());
+                }
+            }
+        });
     }
 
     @Override
