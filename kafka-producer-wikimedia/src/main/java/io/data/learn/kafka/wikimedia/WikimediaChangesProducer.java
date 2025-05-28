@@ -22,6 +22,12 @@ public class WikimediaChangesProducer {
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        // safe producer config (safe by default in > 23.0 version)
+        properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
+        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+//        properties.setProperty(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG);
+//        properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5");
+
 
         // create producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
