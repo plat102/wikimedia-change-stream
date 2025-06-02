@@ -26,6 +26,9 @@ dependencies {
     // https://mvnrepository.com/artifact/com.launchdarkly/okhttp-eventsource
 //    implementation("com.launchdarkly:okhttp-eventsource:4.1.1")
     implementation("com.launchdarkly:okhttp-eventsource:2.5.0")
+
+    // https://mvnrepository.com/artifact/io.github.cdimascio/java-dotenv
+    implementation("io.github.cdimascio:java-dotenv:5.2.2")
 }
 
 tasks.test {

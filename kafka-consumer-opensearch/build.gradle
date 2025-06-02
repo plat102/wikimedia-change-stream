@@ -24,6 +24,9 @@ dependencies {
 
     // https://central.sonatype.com/artifact/com.google.code.gson/gson
     implementation 'com.google.code.gson:gson:2.13.1'
+
+    // https://mvnrepository.com/artifact/io.github.cdimascio/java-dotenv
+    implementation 'io.github.cdimascio:java-dotenv:5.2.2'
 }
 
 test {
