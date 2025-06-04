@@ -36,7 +36,7 @@ public class WikimediaChangesProducer {
         // create producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        String topicName = "wikimedia.recentchanges";
+        String topicName = "wikimedia.recentchange";
         // build producer event source
         String url = "https://stream.wikimedia.org/v2/stream/recentchange";
         EventHandler eventHandler = new WikimediaChangeHandler(producer, topicName);
