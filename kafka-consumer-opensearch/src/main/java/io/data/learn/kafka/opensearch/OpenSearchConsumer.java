@@ -78,6 +78,10 @@ public class OpenSearchConsumer {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
+        // manual commit
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        // properties.setProperty(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
+
         // create consumer
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
 
@@ -154,6 +158,10 @@ public class OpenSearchConsumer {
                         }
 
                     }
+                    // --- At least once - commit offset after the batch is consumed ---
+                    consumer.commitSync();
+                    log.info("Offsets have been commited!");
+
                 }
 
             }
