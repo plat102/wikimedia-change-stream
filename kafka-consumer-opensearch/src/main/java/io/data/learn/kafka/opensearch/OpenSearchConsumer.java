@@ -1,5 +1,6 @@
 package io.data.learn.kafka.opensearch;
 
+import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -83,6 +84,14 @@ public class OpenSearchConsumer {
         return consumer;
     }
 
+    private static String extractID(String json) {
+        return JsonParser.parseString(json).getAsJsonObject()
+                .get("meta")
+                .getAsJsonObject()
+                .get("id")
+                .getAsString();
+    }
+
     public static void main(String[] args) throws IOException {
 
         Logger log = LoggerFactory.getLogger(OpenSearchConsumer.class.getSimpleName());
@@ -123,9 +132,18 @@ public class OpenSearchConsumer {
                     for (ConsumerRecord<String, String> record : records) {
 
                         // send the record into OpenSearch via index request
+
+                        // --- send record avoiding msg duplication ---
+                        // strategy 1: define and ID using Kafka coordinate
+//                        String msgId = record.topic() + "_" + record.partition() + "_" + record.offset();
+
                         try {
+                            // strategy 2: extract Id from JSON value
+                            String msgId = extractID(record.value());
+
                             IndexRequest indexRequest = new IndexRequest("wikimedia")
-                                    .source(record.value(), XContentType.JSON);
+                                    .source(record.value(), XContentType.JSON)
+                                    .id(msgId);
 
                             IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
                             log.info("Inserted 1 document into OpenSearch");
