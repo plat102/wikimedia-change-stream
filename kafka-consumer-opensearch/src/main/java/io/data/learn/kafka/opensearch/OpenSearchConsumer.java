@@ -14,6 +14,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.opensearch.action.bulk.BulkRequest;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
@@ -133,6 +135,9 @@ public class OpenSearchConsumer {
                     int recordCount = records.count();
                     log.info("Received " + recordCount + " record(s");
 
+                    // --- batching data by bulk request ----
+                    BulkRequest bulkRequest = new BulkRequest();
+
                     for (ConsumerRecord<String, String> record : records) {
 
                         // send the record into OpenSearch via index request
@@ -149,18 +154,38 @@ public class OpenSearchConsumer {
                                     .source(record.value(), XContentType.JSON)
                                     .id(msgId);
 
-                            IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
-                            log.info("Inserted 1 document into OpenSearch");
-                            log.info(indexResponse.getId());
+                            // IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
+//                            log.info("Inserted 1 document into OpenSearch");
+//                            log.info(indexResponse.getId());
+
+                            // add index request to bulk request
+                            bulkRequest.add(indexRequest);
 
                         } catch (Exception e) {
                             log.error("Something went wrong when sending record into OpenSearch", e);
                         }
 
                     }
-                    // --- At least once - commit offset after the batch is consumed ---
-                    consumer.commitSync();
-                    log.info("Offsets have been commited!");
+                    // send bulk request to OpenSearch
+                    if (bulkRequest.numberOfActions() > 0) {
+                        BulkResponse bulkResponse = openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+                        log.info("Inserted " + bulkResponse.getItems().length + " record(s) into OpenSearch");
+
+                        // accept delay
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e){
+                            e.printStackTrace();
+                        }
+
+                        // --- At least once - commit offset after the batch is consumed ---
+                        consumer.commitSync();
+                        log.info("Offsets have been commited!");
+                    }
+
+                    // --- At least once - commit offset after the record/batch is consumed ---
+//                    consumer.commitSync();
+//                    log.info("Offsets have been commited!");
 
                 }
 
