@@ -13,6 +13,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
@@ -110,6 +111,27 @@ public class OpenSearchConsumer {
             // --- 2. create our Kafka client ---
             KafkaConsumer<String, String> consumer = createKafkaConsumer();
 
+            // with shutdown
+            // get a reference to the main thread that runs this application
+            final Thread mainThread = Thread.currentThread();
+
+            // adding the shutdown hook (starts when shutdown event occur)
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+
+                @Override
+                public void run() {
+                    log.info("Detected a shutdown, let's exit by calling consumer.wakeup()");
+                    consumer.wakeup();
+
+                    // join the main thread
+                    try {
+                        mainThread.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
             // create OpenSearch index if it doesn't exist already
             try (openSearchClient; consumer) {
                 boolean indexExist = openSearchClient.indices().exists(new GetIndexRequest("wikimedia"), RequestOptions.DEFAULT);
@@ -189,6 +211,16 @@ public class OpenSearchConsumer {
 
                 }
 
+            } catch (WakeupException e) {
+                log.info("Consumer is starting to shutdown");
+            } catch (Exception e) {
+                log.error("Unexpected error in consumer", e);
+            } finally {
+                // close consumer and commit offset
+                consumer.close();
+                // close Open Search lient
+                openSearchClient.close();
+                log.info("The consumer is now gracefully shutdown");
             }
 
             // --- 5. close things ---
